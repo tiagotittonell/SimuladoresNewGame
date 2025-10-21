@@ -1,10 +1,20 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.SceneManagement;
+using System.Collections;
 
 public class GameController : MonoBehaviour
 {
     public static GameController Instance;
-    public GameObject deathScreen; // asignar el Canvas con la imagen en el inspector
+
+    [Header("Pantalla de Muerte")]
+    public GameObject deathScreen;
+
+    [Header("Victoria")]
+    public string victorySceneName = "VictoryScene"; // pon el nombre de tu escena de victoria
+    public float victoryDelay = 5f; // ⏳ tiempo antes de cambiar de escena
+
+    private int totalEnemies;
+    private int enemiesKilled;
 
     void Awake()
     {
@@ -12,19 +22,44 @@ public class GameController : MonoBehaviour
             Instance = this;
     }
 
+    void Start()
+    {
+        EnemyHealth[] enemies = FindObjectsOfType<EnemyHealth>();
+        totalEnemies = enemies.Length;
+        enemiesKilled = 0;
+
+        Debug.Log($"[GameController] Enemigos detectados al inicio: {totalEnemies}");
+    }
+
     public void PlayerDied()
     {
         if (deathScreen != null)
-            deathScreen.SetActive(true); // mostrar pantalla de muerte
+            deathScreen.SetActive(true);
     }
 
-    // Reinicia la escena actual
+    public void EnemyDied()
+    {
+        enemiesKilled++;
+        Debug.Log($"[GameController] Un enemigo murió. Total: {enemiesKilled}/{totalEnemies}");
+
+        if (enemiesKilled >= totalEnemies && totalEnemies > 0)
+        {
+            StartCoroutine(LoadVictoryWithDelay());
+        }
+    }
+
+    private IEnumerator LoadVictoryWithDelay()
+    {
+        Debug.Log($"[GameController] Todos los enemigos eliminados. Cambiando de escena en {victoryDelay} segundos...");
+        yield return new WaitForSeconds(victoryDelay);
+        SceneManager.LoadScene(victorySceneName);
+    }
+
     public void Restart()
     {
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 
-    // Vuelve al men� principal
     public void ReturnToMenu()
     {
         SceneManager.LoadScene("Menu");

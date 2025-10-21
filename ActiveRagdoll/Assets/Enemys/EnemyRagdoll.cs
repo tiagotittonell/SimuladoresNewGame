@@ -1,42 +1,79 @@
+﻿
+//using UnityEngine;
+
+//public class EnemyRagdoll : MonoBehaviour
+//{
+//    [Header("Root del Ragdoll (normalmente el cuerpo)")]
+//    public Transform ragdollRoot;
+
+//    private Collider[] ragdollColliders;
+//    private Rigidbody[] ragdollRigidbodies;
+//    private Animator animator;
+
+//    void Awake()
+//    {
+//        animator = GetComponent<Animator>();
+
+//        // Buscar colliders y rigidbodies en el ragdoll
+//        ragdollColliders = ragdollRoot.GetComponentsInChildren<Collider>();
+//        ragdollRigidbodies = ragdollRoot.GetComponentsInChildren<Rigidbody>();
+
+//        // Desactivarlos al inicio (personaje vivo)
+//        SetRagdollActive(false);
+//    }
+
+//    public void SetRagdollActive(bool active)
+//    {
+//        foreach (var col in ragdollColliders)
+//            col.enabled = active;
+
+//        foreach (var rb in ragdollRigidbodies)
+//        {
+//            rb.isKinematic = !active;
+//            rb.useGravity = active;
+//        }
+
+//        if (animator != null)
+//            animator.enabled = !active;
+//    }
+//}
 using UnityEngine;
 
 public class EnemyRagdoll : MonoBehaviour
 {
-    private Animator animator;
-    private Rigidbody mainRb;
-    private Collider mainCollider;
-    private Rigidbody[] ragdollBodies;
+    [Header("Root del Ragdoll")]
+    public Transform ragdollRoot;
+
     private Collider[] ragdollColliders;
+    private Rigidbody[] ragdollRigidbodies;
 
     void Awake()
     {
-        animator = GetComponent<Animator>();
-        mainRb = GetComponent<Rigidbody>();
-        mainCollider = GetComponent<Collider>();
-
-        // Buscar todos los rigidbodies/colliders en los huesos
-        ragdollBodies = GetComponentsInChildren<Rigidbody>();
-        ragdollColliders = GetComponentsInChildren<Collider>();
-
-        // Inicialmente desactivar ragdoll
-        SetRagdoll(false);
+        ragdollColliders = ragdollRoot.GetComponentsInChildren<Collider>();
+        ragdollRigidbodies = ragdollRoot.GetComponentsInChildren<Rigidbody>();
+        SetRagdollActive(false);
     }
 
-    public void SetRagdoll(bool active)
+    public void SetRagdollActive(bool active)
     {
-        // Activa/desactiva Animator y el rigidbody principal
-        if (animator) animator.enabled = !active;
-        if (mainRb) mainRb.isKinematic = active;
-        if (mainCollider) mainCollider.enabled = !active;
-
-        // Configurar huesos
-        foreach (var rb in ragdollBodies)
-        {
-            if (rb != mainRb) rb.isKinematic = !active;
-        }
         foreach (var col in ragdollColliders)
+            col.enabled = active;
+
+        foreach (var rb in ragdollRigidbodies)
         {
-            if (col != mainCollider) col.enabled = active;
+            rb.isKinematic = !active;
+            rb.useGravity = active;
+
+            if (active)
+            {
+                rb.velocity = Vector3.zero;
+                rb.angularVelocity = Vector3.zero;
+                rb.position = rb.transform.position; // evita offset
+                rb.rotation = rb.transform.rotation;
+                rb.Sleep();
+            }
         }
     }
 }
+
+
