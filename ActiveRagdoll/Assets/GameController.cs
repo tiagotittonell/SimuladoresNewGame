@@ -1,17 +1,22 @@
 ﻿using UnityEngine;
 using UnityEngine.SceneManagement;
 using System.Collections;
+using System.Collections.Generic;
 
 public class GameController : MonoBehaviour
 {
     public static GameController Instance;
 
-    [Header("Pantalla de Muerte")]
+    [Header("Pantallas")]
     public GameObject deathScreen;
+    public GameObject victoryPanel; // panel en la misma escena (Canvas)
 
-    [Header("Victoria")]
-    public string victorySceneName = "VictoryScene"; // pon el nombre de tu escena de victoria
-    public float victoryDelay = 5f; // ⏳ tiempo antes de cambiar de escena
+    [Header("Niveles internos")]
+    public List<GameObject> levels = new List<GameObject>();
+    private int currentLevel = 0;
+
+    [Header("Configuración de transición")]
+    public float victoryDelay = 2f; // Tiempo antes de mostrar pantalla de victoria
 
     private int totalEnemies;
     private int enemiesKilled;
@@ -20,15 +25,25 @@ public class GameController : MonoBehaviour
     {
         if (Instance == null)
             Instance = this;
+        else
+            Destroy(gameObject);
     }
 
     void Start()
     {
-        EnemyHealth[] enemies = FindObjectsOfType<EnemyHealth>();
-        totalEnemies = enemies.Length;
-        enemiesKilled = 0;
+        // Desactivar todas las "EscenaX" menos la actual
+        for (int i = 0; i < levels.Count; i++)
+            levels[i].SetActive(i == currentLevel);
 
-        Debug.Log($"[GameController] Enemigos detectados al inicio: {totalEnemies}");
+        ContarEnemigosDelNivel();
+    }
+
+    private void ContarEnemigosDelNivel()
+    {
+        EnemyHealth[] enemigos = levels[currentLevel].GetComponentsInChildren<EnemyHealth>();
+        totalEnemies = enemigos.Length;
+        enemiesKilled = 0;
+        Debug.Log($"[GameController] Enemigos en nivel {currentLevel + 1}: {totalEnemies}");
     }
 
     public void PlayerDied()
@@ -43,25 +58,49 @@ public class GameController : MonoBehaviour
         Debug.Log($"[GameController] Un enemigo murió. Total: {enemiesKilled}/{totalEnemies}");
 
         if (enemiesKilled >= totalEnemies && totalEnemies > 0)
-        {
-            StartCoroutine(LoadVictoryWithDelay());
-        }
+            StartCoroutine(MostrarVictoria());
     }
 
-    private IEnumerator LoadVictoryWithDelay()
+    private IEnumerator MostrarVictoria()
     {
-        Debug.Log($"[GameController] Todos los enemigos eliminados. Cambiando de escena en {victoryDelay} segundos...");
+        Debug.Log("[GameController] Todos los enemigos eliminados, mostrando pantalla de victoria...");
         yield return new WaitForSeconds(victoryDelay);
-        SceneManager.LoadScene(victorySceneName);
+
+        if (victoryPanel != null)
+            victoryPanel.SetActive(true);
+
+        Time.timeScale = 0f;
+    }
+
+    public void NextLevel()
+    {
+        Time.timeScale = 1f;
+        victoryPanel.SetActive(false);
+
+        levels[currentLevel].SetActive(false);
+        currentLevel++;
+
+        if (currentLevel < levels.Count)
+        {
+            levels[currentLevel].SetActive(true);
+            ContarEnemigosDelNivel();
+        }
+        else
+        {
+            Debug.Log("🎉 ¡Todos los niveles completados!");
+            SceneManager.LoadScene("VictoryScene"); // vuelve a usar tu escena final si querés
+        }
     }
 
     public void Restart()
     {
+        Time.timeScale = 1f;
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 
     public void ReturnToMenu()
     {
+        Time.timeScale = 1f;
         SceneManager.LoadScene("Menu");
     }
 }

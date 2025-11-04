@@ -1,42 +1,4 @@
 ﻿
-//using UnityEngine;
-
-//public class EnemyRagdoll : MonoBehaviour
-//{
-//    [Header("Root del Ragdoll (normalmente el cuerpo)")]
-//    public Transform ragdollRoot;
-
-//    private Collider[] ragdollColliders;
-//    private Rigidbody[] ragdollRigidbodies;
-//    private Animator animator;
-
-//    void Awake()
-//    {
-//        animator = GetComponent<Animator>();
-
-//        // Buscar colliders y rigidbodies en el ragdoll
-//        ragdollColliders = ragdollRoot.GetComponentsInChildren<Collider>();
-//        ragdollRigidbodies = ragdollRoot.GetComponentsInChildren<Rigidbody>();
-
-//        // Desactivarlos al inicio (personaje vivo)
-//        SetRagdollActive(false);
-//    }
-
-//    public void SetRagdollActive(bool active)
-//    {
-//        foreach (var col in ragdollColliders)
-//            col.enabled = active;
-
-//        foreach (var rb in ragdollRigidbodies)
-//        {
-//            rb.isKinematic = !active;
-//            rb.useGravity = active;
-//        }
-
-//        if (animator != null)
-//            animator.enabled = !active;
-//    }
-//}
 using UnityEngine;
 
 public class EnemyRagdoll : MonoBehaviour
