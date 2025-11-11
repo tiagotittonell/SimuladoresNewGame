@@ -7,16 +7,16 @@ public class GameController : MonoBehaviour
 {
     public static GameController Instance;
 
-    [Header("Pantallas")]
+    [Header("Pantalla de Muerte")]
     public GameObject deathScreen;
-    public GameObject victoryPanel; // panel en la misma escena (Canvas)
 
-    [Header("Niveles internos")]
+    [Header("Configuración de victoria")]
+    public string victorySceneName = "Victoria"; // nombre exacto de tu escena de victoria
+    public float victoryDelay = 2f; // tiempo antes de cambiar de escena
+
+    [Header("Gestión de niveles internos (opcional)")]
     public List<GameObject> levels = new List<GameObject>();
     private int currentLevel = 0;
-
-    [Header("Configuración de transición")]
-    public float victoryDelay = 2f; // Tiempo antes de mostrar pantalla de victoria
 
     private int totalEnemies;
     private int enemiesKilled;
@@ -31,7 +31,7 @@ public class GameController : MonoBehaviour
 
     void Start()
     {
-        // Desactivar todas las "EscenaX" menos la actual
+        // Si tenés niveles internos, solo activa el primero
         for (int i = 0; i < levels.Count; i++)
             levels[i].SetActive(i == currentLevel);
 
@@ -40,10 +40,19 @@ public class GameController : MonoBehaviour
 
     private void ContarEnemigosDelNivel()
     {
-        EnemyHealth[] enemigos = levels[currentLevel].GetComponentsInChildren<EnemyHealth>();
-        totalEnemies = enemigos.Length;
+        if (levels.Count > 0 && currentLevel < levels.Count)
+        {
+            EnemyHealth[] enemigos = levels[currentLevel].GetComponentsInChildren<EnemyHealth>();
+            totalEnemies = enemigos.Length;
+        }
+        else
+        {
+            EnemyHealth[] enemigos = FindObjectsOfType<EnemyHealth>();
+            totalEnemies = enemigos.Length;
+        }
+
         enemiesKilled = 0;
-        Debug.Log($"[GameController] Enemigos en nivel {currentLevel + 1}: {totalEnemies}");
+        Debug.Log($"[GameController] Enemigos detectados: {totalEnemies}");
     }
 
     public void PlayerDied()
@@ -58,38 +67,16 @@ public class GameController : MonoBehaviour
         Debug.Log($"[GameController] Un enemigo murió. Total: {enemiesKilled}/{totalEnemies}");
 
         if (enemiesKilled >= totalEnemies && totalEnemies > 0)
-            StartCoroutine(MostrarVictoria());
+        {
+            StartCoroutine(CargarVictoria());
+        }
     }
 
-    private IEnumerator MostrarVictoria()
+    private IEnumerator CargarVictoria()
     {
-        Debug.Log("[GameController] Todos los enemigos eliminados, mostrando pantalla de victoria...");
+        Debug.Log($"[GameController] Todos los enemigos eliminados. Cambiando a escena '{victorySceneName}' en {victoryDelay}s...");
         yield return new WaitForSeconds(victoryDelay);
-
-        if (victoryPanel != null)
-            victoryPanel.SetActive(true);
-
-        Time.timeScale = 0f;
-    }
-
-    public void NextLevel()
-    {
-        Time.timeScale = 1f;
-        victoryPanel.SetActive(false);
-
-        levels[currentLevel].SetActive(false);
-        currentLevel++;
-
-        if (currentLevel < levels.Count)
-        {
-            levels[currentLevel].SetActive(true);
-            ContarEnemigosDelNivel();
-        }
-        else
-        {
-            Debug.Log("🎉 ¡Todos los niveles completados!");
-            SceneManager.LoadScene("VictoryScene"); // vuelve a usar tu escena final si querés
-        }
+        SceneManager.LoadScene(victorySceneName);
     }
 
     public void Restart()

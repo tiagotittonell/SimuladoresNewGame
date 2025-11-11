@@ -1,37 +1,51 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 [RequireComponent(typeof(Collider))]
 public class EnemyDamage : MonoBehaviour
 {
+    [Header("Daño")]
     public int damage = 50;
-    private Collider hitbox;
+
+    [Header("Ignorar colisiones del propio enemigo")]
+    [SerializeField] private Transform ownerRoot; // el root del enemigo (así cubrimos ragdolls también)
+
+    private Collider weaponCollider;
 
     void Awake()
     {
-        hitbox = GetComponent<Collider>();
-        hitbox.isTrigger = true;
-        hitbox.enabled = false;
+        weaponCollider = GetComponent<Collider>();
+        weaponCollider.isTrigger = true;
+        weaponCollider.enabled = false;
+
+        // Buscar el root si no está asignado
+        if (ownerRoot == null)
+            ownerRoot = transform.root;
+
+        // Ignorar TODAS las colisiones con colliders del propio enemigo (ragdoll incluido)
+        var ownerColliders = ownerRoot.GetComponentsInChildren<Collider>(true);
+        foreach (var col in ownerColliders)
+        {
+            if (col != weaponCollider)
+                Physics.IgnoreCollision(weaponCollider, col, true);
+        }
     }
 
-    public void EnableHitbox() => hitbox.enabled = true;
-    public void DisableHitbox() => hitbox.enabled = false;
+    public void EnableHitbox() => weaponCollider.enabled = true;
+    public void DisableHitbox() => weaponCollider.enabled = false;
 
-    void OnTriggerEnter(Collider other)
+    private void OnTriggerEnter(Collider other)
     {
-        Debug.Log("Colisi�n detectada con: " + other.name);
+        // Ignorar colisiones con cualquier parte del propio enemigo
+        if (other.transform.root == ownerRoot) return;
 
+        // Dañar solo al jugador
         if (other.CompareTag("Player"))
         {
-            PlayerHealth player = other.GetComponent<PlayerHealth>() ?? other.GetComponentInParent<PlayerHealth>();
-
+            var player = other.GetComponent<PlayerHealth>() ?? other.GetComponentInParent<PlayerHealth>();
             if (player != null)
             {
                 player.TakeDamage(damage);
-                Debug.Log($"Se aplicaron {damage} de da�o al jugador.");
-            }
-            else
-            {
-                Debug.LogWarning("El objeto con tag Player no tiene PlayerHealth");
+                Debug.Log($"🔥 Daño {damage} aplicado a {other.name}");
             }
         }
     }
