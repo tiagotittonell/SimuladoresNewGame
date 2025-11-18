@@ -7,14 +7,14 @@ public class EnemyHealth : MonoBehaviour
     [Header("Vida")]
     public int maxHealth = 50;
     protected int currentHealth;
-    protected bool isDead = false; // 🔧 Antes era private
+    protected bool isDead = false; 
 
     [Header("Refs")]
-    protected EnemyRagdoll ragdoll;     // 🔧 protected
-    protected EnemyAI ai;               // 🔧 protected
-    protected NavMeshAgent agent;       // 🔧 protected
-    protected Animator animator;        // 🔧 protected
-    protected Collider mainCollider;    // 🔧 protected
+    protected EnemyRagdoll ragdoll;    
+    protected EnemyAI ai;               
+    protected NavMeshAgent agent;       
+    protected Animator animator;       
+    protected Collider mainCollider;    
 
     protected Vector3 cachedPosition;
     protected Quaternion cachedRotation;
@@ -50,9 +50,7 @@ public class EnemyHealth : MonoBehaviour
         if (isDead) return;
         isDead = true;
 
-        Debug.Log($"{gameObject.name} murió ☠️");
 
-        // 1️⃣ Desactivar AI y NavMesh antes de todo
         if (ai != null) ai.enabled = false;
 
         if (agent != null && agent.enabled)
@@ -64,37 +62,35 @@ public class EnemyHealth : MonoBehaviour
             agent.enabled = false;
         }
 
-        // 2️⃣ Desactivar el collider principal ANTES de activar el ragdoll
         if (mainCollider != null)
         {
             mainCollider.enabled = false;
         }
 
-        // 3️⃣ Guardar posición y elevar el transform unos cm (evita clip inicial)
         cachedPosition = transform.position + Vector3.up * 0.05f;
         cachedRotation = transform.rotation;
         transform.position = cachedPosition;
         transform.rotation = cachedRotation;
 
-        // 4️⃣ Desactivar animator
         if (animator != null)
         {
             animator.enabled = false;
         }
 
-        // 5️⃣ Activar ragdoll sin fuerzas
         if (ragdoll != null)
         {
             ragdoll.SetRagdollActive(true);
         }
 
-        // 6️⃣ Avisar al GameController que un enemigo murió
+        var drop = GetComponent<EnemyDrops>();
+        if (drop != null)
+            drop.DropCoins();
+
         if (GameController.Instance != null)
         {
             GameController.Instance.EnemyDied();
         }
 
-        // 7️⃣ (Opcional) destruir enemigo después de un tiempo
         Destroy(gameObject, 10f);
     }
 

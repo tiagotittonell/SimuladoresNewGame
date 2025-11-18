@@ -73,6 +73,12 @@ public class PlayerHealth : MonoBehaviour
         if (gameController != null)
             gameController.PlayerDied();
     }
+    public void InitializeHealthUI()
+    {
+        currentHealth = maxHealth;
+        UpdateHealthUI();
+    }
+
 
     public void SetInvulnerable(bool state)
     {

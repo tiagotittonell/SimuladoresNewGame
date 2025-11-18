@@ -113,7 +113,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   speed: 0.01
   lifetime: 5
-  damage: 20
+  damage: 100
   explosionPrefab: {fileID: 0}
 --- !u!1 &5750887222513639234
 GameObject:

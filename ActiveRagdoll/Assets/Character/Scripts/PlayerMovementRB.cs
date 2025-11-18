@@ -23,16 +23,15 @@ public class PlayerMovementRB : MonoBehaviour
     private int lastAttack = 0;
 
     [Header("Combos")]
-    public int comboStep = 0;          // 0 = ninguno, 1 = ataque1, 2 = ataque2...
-    public float comboResetTime = 1f;  // tiempo para reiniciar combo si no seguiste
+    public int comboStep = 0;          
+    public float comboResetTime = 1f;  
     private float lastAttackTime = 0f;
-    private bool queuedAttack = false; // buffer de input
+    private bool queuedAttack = false; 
 
     public WeaponHitbox weapon;
     private Vector3 moveInput;
     private bool isRunning;
 
-    // ================= DODGE (nuevo sistema físico) =================
     [Header("Dodge")]
     public KeyCode dodgeKey = KeyCode.LeftControl;
     public float dodgeDistance = 4f;
@@ -41,9 +40,8 @@ public class PlayerMovementRB : MonoBehaviour
     private bool isDodging = false;
     private float lastDodgeTime = -999f;
     [Range(0.8f, 1.5f)]
-    public float dashSyncMultiplier = 1.15f; // Ajusta la sincronía entre animación y movimiento
+    public float dashSyncMultiplier = 1.15f; 
 
-    // ================================================================
 
     void Start()
     {
@@ -54,21 +52,18 @@ public class PlayerMovementRB : MonoBehaviour
 
     void Update()
     {
-        // ----- Input movimiento -----
-        float horizontal = Input.GetAxis("Horizontal"); // A/D
-        float vertical = Input.GetAxis("Vertical");     // W/S
+        float horizontal = Input.GetAxis("Horizontal"); 
+        float vertical = Input.GetAxis("Vertical");    
         moveInput = new Vector3(horizontal, 0, vertical).normalized;
 
         isRunning = Input.GetKey(KeyCode.LeftShift);
 
-        // ----- Animaciones locomoción -----
         if (animator != null)
         {
             animator.SetFloat("VelX", horizontal);
             animator.SetFloat("VelY", isRunning ? vertical * 2f : vertical);
         }
 
-        // ----- Suelo / salto -----
         isGrounded = Physics.Raycast(transform.position, Vector3.down, 1.1f);
         if (animator != null)
             animator.SetBool("isJumping", !isGrounded);
@@ -76,13 +71,11 @@ public class PlayerMovementRB : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Space) && isGrounded)
             Jump();
 
-        // ----- Ataques -----
         if (Input.GetMouseButtonDown(0) && !isAttacking)
             LightAttack();
         else if (Input.GetMouseButtonDown(1) && !isAttacking)
             HeavyAttack();
 
-        // ----- Autocierre de ataque -----
         if (isAttacking)
         {
             var st = animator.GetCurrentAnimatorStateInfo(0);
@@ -92,20 +85,19 @@ public class PlayerMovementRB : MonoBehaviour
                 EndAttack();
         }
 
-        // BOTÓN DEBUG opcional:
         if (Input.GetKeyDown(KeyCode.R)) EndAttack();
 
-        // ----- DODGE -----
         if (Input.GetKeyDown(dodgeKey))
             TryDodge();
     }
 
+  
+
     void FixedUpdate()
     {
-        if (isAttacking) return;
         if (isDodging) return;
 
-        // Personaje mira hacia la cámara
+        // Dirección hacia la cámara
         Vector3 camForward = Camera.main.transform.forward; camForward.y = 0;
         Quaternion targetRotation = Quaternion.LookRotation(camForward);
         rb.MoveRotation(Quaternion.Slerp(rb.rotation, targetRotation, rotationSpeed * Time.fixedDeltaTime));
@@ -113,15 +105,20 @@ public class PlayerMovementRB : MonoBehaviour
         // Movimiento relativo a la cámara
         Vector3 camRight = Camera.main.transform.right; camRight.y = 0;
         Vector3 moveDir = (camForward * moveInput.z + camRight * moveInput.x).normalized;
-
+        rb.rotation = Quaternion.Euler(0f, rb.rotation.eulerAngles.y, 0f);
         if (moveDir.magnitude > 0.1f && isGrounded)
         {
-            float speed = isRunning ? runSpeed : walkSpeed;
+            float speed;
+
+            if (isAttacking)
+                speed = (isRunning ? runSpeed : walkSpeed) * 0.35f; 
+            else
+                speed = isRunning ? runSpeed : walkSpeed;
+
             rb.MovePosition(rb.position + moveDir * speed * Time.fixedDeltaTime);
         }
     }
 
-    // ================= ATAQUES =================
     void LightAttack()
     {
         if (isAttacking)
@@ -177,7 +174,6 @@ public class PlayerMovementRB : MonoBehaviour
         rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
     }
 
-    // ================= DODGE =================
     void TryDodge()
     {
         if (isDodging) return;
@@ -188,11 +184,9 @@ public class PlayerMovementRB : MonoBehaviour
         float h = Input.GetAxisRaw("Horizontal");
         float v = Input.GetAxisRaw("Vertical");
 
-        // Si no hay input, dash hacia atrás
         Vector3 dir = new Vector3(h, 0, v);
         if (dir.sqrMagnitude < 0.01f) dir = Vector3.back;
 
-        // Dirección relativa a cámara
         Vector3 camF = Camera.main.transform.forward; camF.y = 0;
         Vector3 camR = Camera.main.transform.right; camR.y = 0;
         Vector3 moveDir = (camF * dir.z + camR * dir.x).normalized;
@@ -205,14 +199,12 @@ public class PlayerMovementRB : MonoBehaviour
         isDodging = true;
         lastDodgeTime = Time.time;
 
-        // --- Determinar dirección (0=fwd, 1=back, 2=left, 3=right)
         float dodgeDir = DirToIndexFloat(dir);
 
         // --- Activar animación ---
         animator.SetBool("isDodging", true);
         animator.SetFloat("DodgeDir", dodgeDir);
 
-        // --- Duración real del clip actual ---
         float clipDuration = GetDodgeAnimDuration(dodgeDir);
 
         // --- Movimiento físico ---
@@ -230,11 +222,9 @@ public class PlayerMovementRB : MonoBehaviour
             yield return new WaitForFixedUpdate();
         }
 
-        // --- Restaurar físicas ---
         rb.useGravity = true;
         rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
 
-        // --- Terminar animación ---
         animator.SetBool("isDodging", false);
         animator.SetFloat("DodgeDir", 0f);
         yield return new WaitForSeconds(0.5f);
@@ -243,7 +233,6 @@ public class PlayerMovementRB : MonoBehaviour
     }
     float GetDodgeAnimDuration(float dodgeDir)
     {
-        // ⚙️ Asegurate que los nombres coincidan con los clips en tu Blend Tree
         switch ((int)dodgeDir)
         {
             case 0: return GetClipLength("DashForward");
@@ -260,7 +249,7 @@ public class PlayerMovementRB : MonoBehaviour
             if (clip.name == clipName)
                 return clip.length;
 
-        return 0.6f; // fallback
+        return 0.6f; 
     }
 
     float DirToIndexFloat(Vector3 dir)
@@ -272,9 +261,9 @@ public class PlayerMovementRB : MonoBehaviour
         float dotR = Vector3.Dot(dir, camR);
 
         if (Mathf.Abs(dotF) >= Mathf.Abs(dotR))
-            return (dotF >= 0f) ? 0f : 1f; // 0 = forward, 1 = back
+            return (dotF >= 0f) ? 0f : 1f;
         else
-            return (dotR >= 0f) ? 3f : 2f; // 2 = left, 3 = right
+            return (dotR >= 0f) ? 3f : 2f;
     }
 
 
