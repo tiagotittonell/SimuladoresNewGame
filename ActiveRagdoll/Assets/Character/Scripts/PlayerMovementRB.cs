@@ -176,6 +176,8 @@ public class PlayerMovementRB : MonoBehaviour
 
     void TryDodge()
     {
+        TutorialController.Instance?.RegisterDash();
+
         if (isDodging) return;
         if (Time.time - lastDodgeTime < dodgeCooldown) return;
         if (!isGrounded) return;

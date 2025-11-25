@@ -12,6 +12,14 @@ public class GameController : MonoBehaviour
     [SerializeField] private GameObject victoryPanel;
     [SerializeField] private GameObject hudCanvas;
 
+    [Header("Extra")]
+    [SerializeField] private GameObject characterPreviewScene; // ⬅ tu nueva sala
+
+
+    [Header("Progreso de niveles")]
+    [SerializeField] private GameObject progressBar;
+
+
     [Header("Niveles")]
     [SerializeField] private List<GameObject> levels = new List<GameObject>();
     private int currentLevel = 0;
@@ -73,7 +81,33 @@ public class GameController : MonoBehaviour
 
         // 🟦 Aplicar skybox del primer nivel
         AplicarSkyboxDelNivel(currentLevel);
+
+        ProgressBarUI barra = FindObjectOfType<ProgressBarUI>();
+        if (barra != null)
+            barra.UpdateProgress(0);
     }
+    void Update()
+    {
+        // Atajo para ir a la Sala de Mejoras
+        if (Input.GetKeyDown(KeyCode.Q))
+        {
+            GoToCharacterPreview();
+        }
+        if (Input.GetKeyDown(KeyCode.T))
+            SkipLevelDebug();
+    }
+    public void ReturnToGame()
+    {
+        characterPreviewScene.SetActive(false);
+
+        levels[currentLevel].SetActive(true);
+        hudCanvas.SetActive(true);
+        progressBar.SetActive(true);
+
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+    }
+
 
     private void ContarEnemigosDelNivel()
     {
@@ -90,6 +124,8 @@ public class GameController : MonoBehaviour
             deathScreen.SetActive(true);
             Time.timeScale = 0f;
         }
+        progressBar?.SetActive(false);
+
     }
 
     public void EnemyDied()
@@ -107,6 +143,7 @@ public class GameController : MonoBehaviour
     {
         yield return new WaitForSeconds(5f);
         Time.timeScale = 0f;
+        progressBar?.SetActive(false);
 
         if (mainCamera != null)
         {
@@ -142,7 +179,6 @@ public class GameController : MonoBehaviour
         Cursor.visible = true;
     }
 
-
     public void NextLevel()
     {
         Debug.Log("Botón NextLevel presionado");
@@ -156,29 +192,24 @@ public class GameController : MonoBehaviour
         levels[currentLevel].SetActive(false);
         currentLevel++;
 
-        // ¿YA TERMINÓ EL JUEGO?
+        // FINAL DEL JUEGO
         if (currentLevel >= levels.Count)
         {
-            Debug.Log("🔥 ¡Juego completado! No hay más niveles.");
-
-            // Mostrar pantalla final
             if (finalGamePanel != null)
                 finalGamePanel.SetActive(true);
 
-            // Desactivar HUD y jugador
+            progressBar?.SetActive(false);   // ✔ CORRECTO
+
             if (hudCanvas) hudCanvas.SetActive(false);
             if (playerInstance) playerInstance.SetActive(false);
 
-            // Mostrar cursor
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
-
-            // Pausar juego
             Time.timeScale = 0f;
-
-            return; 
+            return;
         }
 
+        // ACTIVAR SIGUIENTE NIVEL
         levels[currentLevel].SetActive(true);
 
         playerInstance = GameObject.FindGameObjectWithTag("Player");
@@ -199,15 +230,23 @@ public class GameController : MonoBehaviour
         if (hudCanvas != null)
             hudCanvas.SetActive(true);
 
+        // ✔ ACTIVAR PROGRESSBAR SIEMPRE QUE ESTÁS JUGANDO
+        progressBar?.SetActive(true);
+
         AplicarSkyboxDelNivel(currentLevel);
 
-        // Nivel Noche
-        if (currentLevel == 2)
+        if (currentLevel == 3)
         {
             DesactivarLucesDelNivel();
             ActivarLucesPersonalizadasNoche();
         }
+
+        // ✔ ACTUALIZAR BARRA
+        ProgressBarUI barra = FindObjectOfType<ProgressBarUI>();
+        if (barra != null)
+            barra.UpdateProgress(currentLevel);
     }
+
 
     private void DesactivarLucesDelNivel()
     {
@@ -302,6 +341,69 @@ public class GameController : MonoBehaviour
             Debug.LogWarning("⚠ No hay skybox asignado para el nivel " + index);
         }
     }
+    public void GoToCharacterPreview()
+    {
+        // Desactivar todos los niveles
+        foreach (var lvl in levels)
+            lvl.SetActive(false);
+
+        // Activar sala de preview
+        if (characterPreviewScene != null)
+            characterPreviewScene.SetActive(true);
+
+        // Ocultar HUD y barra de progreso
+        hudCanvas?.SetActive(false);
+        progressBar?.SetActive(false);
+
+        // Encontrar al player dentro de la sala
+        playerInstance = GameObject.FindGameObjectWithTag("Player");
+
+        if (playerInstance != null)
+        {
+            // 1) Desactivar movimiento
+            var move = playerInstance.GetComponent<PlayerMovementRB>();
+            if (move != null)
+                move.enabled = false;
+
+            // 2) Forzar animación Idle
+            var anim = playerInstance.GetComponent<Animator>();
+            if (anim != null)
+            {
+                anim.SetBool("isAttacking", false);
+                anim.SetBool("isDodging", false);
+                anim.SetInteger("AttackIndex", 0);
+                anim.Play("Idle");  // ← tu animación idle
+            }
+
+            // 3) Fijar posición exacta en la plataforma (opcional)
+            // playerInstance.transform.position = new Vector3(0,1,0);
+        }
+
+        // Activar cursor para rotar el modelo
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+    }
+    public void SkipLevelDebug()
+    {
+        Debug.Log("⏩ DEBUG: Avanzando nivel con tecla T");
+
+        // Evitar errores si ya estamos en el final
+        if (currentLevel >= levels.Count)
+            return;
+
+        // Simula haber matado a todos los enemigos
+        enemiesKilled = totalEnemies;
+
+        // Desactiva hud y animaciones de victoria
+        Time.timeScale = 1f;
+        victoryPanel.SetActive(false);
+
+        // Simplemente llamar al NextLevel normal
+        NextLevel();
+    }
+
+
+
 }
 
 

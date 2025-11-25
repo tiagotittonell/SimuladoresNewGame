@@ -69,6 +69,11 @@ public class EnemyAI : MonoBehaviour
 
     private void MoveTowardsPlayer()
     {
+        if (animator.GetBool("InAttack"))
+        {
+            animator.SetBool("IsWalking", false);
+            return;
+        }
         animator.SetBool("IsWalking", true);
         agent.SetDestination(player.position);
     }
@@ -109,6 +114,7 @@ public class EnemyAI : MonoBehaviour
         yield return new WaitForSeconds(postAttackIdleTime);
 
         isAttacking = false;
+        yield return new WaitForSeconds(0.07f);
         animator.SetBool("IsWalking", true);
     }
 

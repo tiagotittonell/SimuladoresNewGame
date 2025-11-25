@@ -23,10 +23,13 @@ public class MageAI : MonoBehaviour
 
     [Header("FireBall")]
     [SerializeField] private GameObject fireballPrefab;
-    [SerializeField] private Transform firePoint; 
+    [SerializeField] private Transform firePoint;
+
+    private bool isDead = false;
     void Start()
     {
         animator = GetComponent<Animator>();
+
         ragdoll = GetComponent<EnemyRagdoll>();
 
         if (ragdoll != null)
@@ -36,6 +39,7 @@ public class MageAI : MonoBehaviour
 
     void Update()
     {
+        if (isDead) return;  // 🚫 No moverse ni atacar muerto
         if (player == null || isIdleCooldown) return;
 
         float distance = Vector3.Distance(transform.position, player.position);
@@ -71,6 +75,7 @@ public class MageAI : MonoBehaviour
 
     IEnumerator AttackRoutine()
     {
+        if (isDead) yield break;
         isAttacking = true;
         SetIdle();
 
@@ -140,6 +145,25 @@ public class MageAI : MonoBehaviour
             transform.Translate(Vector3.back * moveSpeed * Time.deltaTime);
         }
 
+    }
+
+    public void OnDeath()
+    {
+        // Corta toda lógica de movimiento/ataque
+        player = null;
+
+        // Elimina cualquier rutina activa
+        StopAllCoroutines();
+
+        // Detiene animaciones de ataque o movimiento
+        SetIdle();
+
+        // Flags para evitar re-entradas
+        isAttacking = false;
+        isIdleCooldown = false;
+
+        // Opcional: asegurarte de que no se siga desplazando por transform.Translate
+        isDead = true;
     }
 
     void SetIdle()

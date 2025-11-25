@@ -2820,6 +2820,7 @@ GameObject:
   - component: {fileID: 7348855732698441405}
   - component: {fileID: 7348855732698441398}
   - component: {fileID: 7348855732698441399}
+  - component: {fileID: 6632238529586416628}
   m_Layer: 0
   m_Name: Paladin J Nordstrom (1)
   m_TagString: Player
@@ -2948,6 +2949,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 1000
   healthBarFill: {fileID: 0}
+--- !u!114 &6632238529586416628
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7583226743760641006}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1efa2778a0abd5843886f79fc901273b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &7708299744102693045
 GameObject:
   m_ObjectHideFlags: 0
